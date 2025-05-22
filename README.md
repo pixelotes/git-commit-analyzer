@@ -30,7 +30,7 @@ curl -fsSL https://ollama.ai/install.sh | sh
 ```
 
 **Windows:**
-Download the installer from https://ollama.ai/download
+Download and run the installer from https://ollama.ai/download
 
 #### Install a Model:
 After installing Ollama, pull one of the recommended models for code analysis:
@@ -57,7 +57,7 @@ ollama pull llama3
 - **phi4-mini**: Compact and efficient (~1.5GB RAM required)
 - **llama3**: General purpose model, decent for code analysis
 
-⚠️ **Important**: Models under 3B parameters typically produce unreliable results for security analysis. We recommend using models 3B or larger for production use.
+⚠️ **Important**: Models under 3B parameters typically produce unreliable results for security analysis. Models with 3-4B parameters can be workable on low-end systems, but we recommend using models 7B or larger for production use. More capable models will produce better analysis with less false positives.
 
 See the [Ollama model library](https://ollama.ai/library) for the complete list of available models.
 
@@ -288,9 +288,11 @@ The AI model is prompted to look for:
 ## 📝 To-Do
 
 - [ ] Add better error handling logic
+- [ ] Let users choose to analyze the commits in ascending or descending order
+- [ ] Allow using custom prompts
 - [ ] Make report output more customizable
 - [ ] If ollama lists a single model, use it by default
-- [ ] Make the script less ollama-specific so it can be used with other backends
+- [ ] Consider supporting more backends
 
 ## 🤝 Contributing
 

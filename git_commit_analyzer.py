@@ -317,7 +317,7 @@ def main():
         model = args.model
         print(f"Using specified model: {model}")
 
-    # 🔧 You can test your Ollama endpoint manually with:
+    # You can test your Ollama endpoint manually with:
     # curl -X POST http://localhost:11434/api/generate -H "Content-Type: application/json" -d '{"model":"llama3","prompt":"Hello","stream":false}'
 
     commit_hashes = get_commits_between_dates(args.repo, args.start_date, args.end_date)

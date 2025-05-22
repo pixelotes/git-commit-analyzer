@@ -20,9 +20,6 @@ RUN pip install --no-cache-dir requests
 # Copy the analyzer script
 COPY git_commit_analyzer.py /app/git_commit_analyzer.py
 
-# Make the script executable
-RUN chmod +x /app/git_commit_analyzer.py
-
 # Create a directory for mounting repositories
 RUN mkdir -p /repo
 

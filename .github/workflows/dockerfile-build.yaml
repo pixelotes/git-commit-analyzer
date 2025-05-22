@@ -1,53 +1,23 @@
-name: Dockerfile Build Check
+name: Build Dockerfile on Change
 
 on:
+  push:
+    paths:
+      - 'Dockerfile'
   pull_request:
     paths:
-      - '**/Dockerfile'
-      - '**/*.Dockerfile'
-  push:
-    branches:
-      - main # Or your default branch
-    paths:
-      - '**/Dockerfile'
-      - '**/*.Dockerfile'
+      - 'Dockerfile'
 
 jobs:
-  build-dockerfile:
+  build:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout code
+      - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Get changed Dockerfiles
-        id: changed-dockerfiles
-        uses: tj-actions/changed-files@v41 # You can adjust the version
-        with:
-          files: |
-            **/Dockerfile
-            **/*.Dockerfile
-
       - name: Set up Docker Buildx
-        if: steps.changed-dockerfiles.outputs.any_changed == 'true'
         uses: docker/setup-buildx-action@v3
 
-      - name: Build changed Docker images
-        if: steps.changed-dockerfiles.outputs.any_changed == 'true'
+      - name: Build Docker image
         run: |
-          echo "Attempting to build the following Dockerfiles:"
-          echo "${{ steps.changed-dockerfiles.outputs.all_changed_files }}"
-          for dockerfile in ${{ steps.changed-dockerfiles.outputs.all_changed_files }}; do
-            echo "Building ${dockerfile}..."
-            docker build -f "${dockerfile}" . --tag "test-build-$(basename "${dockerfile}"):latest"
-            if [ $? -ne 0 ]; then
-              echo "::error file=${dockerfile}::Failed to build ${dockerfile}"
-              exit 1
-            fi
-            echo "Successfully built ${dockerfile}"
-          done
-        # Note: The context for `docker build` is set to `.` (the root of your repository).
-        # If your Dockerfile expects a different build context, you'll need to adjust the `docker build` command.
-        # For example, if your Dockerfile is in `app/Dockerfile` and needs `app/` as context:
-        # docker build -f "app/Dockerfile" ./app --tag "test-build-app:latest"
-        # You might need more sophisticated logic if you have many Dockerfiles in different subdirectories
-        # each requiring a specific build context.
+          docker build -t test-image:latest .

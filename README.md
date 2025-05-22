@@ -290,6 +290,7 @@ The AI model is prompted to look for:
 - [ ] Add better error handling logic
 - [ ] Make report output more customizable
 - [ ] If ollama lists a single model, use it by default
+- [ ] Make the script less ollama-specific so it can be used with other backends
 
 ## 🤝 Contributing
 

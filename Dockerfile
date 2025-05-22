@@ -4,6 +4,7 @@ FROM python:3.11-slim
 # Set metadata
 LABEL description="Git Commit Security Analyzer with Ollama integration"
 LABEL version="1.0"
+LABEL test="yes"
 
 # Install git and other necessary system packages
 RUN apt-get update && \

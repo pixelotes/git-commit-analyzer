@@ -289,9 +289,10 @@ The AI model is prompted to look for:
 
 - [ ] Add better error handling logic
 - [ ] Let users choose to analyze the commits in ascending or descending order
+- [ ] Allow using custom prompts
 - [ ] Make report output more customizable
 - [ ] If ollama lists a single model, use it by default
-- [ ] Make the script less ollama-specific so it can be used with other backends
+- [ ] Consider supporting more backends
 
 ## 🤝 Contributing
 

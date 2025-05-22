@@ -30,7 +30,7 @@ curl -fsSL https://ollama.ai/install.sh | sh
 ```
 
 **Windows:**
-Download the installer from https://ollama.ai/download
+Download and run the installer from https://ollama.ai/download
 
 #### Install a Model:
 After installing Ollama, pull one of the recommended models for code analysis:

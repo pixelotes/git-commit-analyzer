@@ -18,7 +18,7 @@ WORKDIR /app
 RUN pip install --no-cache-dir requests
 
 # Copy the analyzer script
-COPY git_commit_analyzer_v6.py /app/git_commit_analyzer.py
+COPY git_commit_analyzer.py /app/git_commit_analyzer.py
 
 # Make the script executable
 RUN chmod +x /app/git_commit_analyzer.py

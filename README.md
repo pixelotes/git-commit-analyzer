@@ -198,7 +198,9 @@ python git_commit_analyzer.py \
 | `--api-url` | Ollama API URL | `http://localhost:11434/api/generate` |
 | `--output` | Output JSON file path | `{repo-name}-report.json` |
 | `--timeout` | API request timeout in seconds | `120` |
-| `--debug` | Enable detailed debug output | `false` |
+| `--debug` | Saves LLM responses to .json files | `false` |
+| `--prompt` | Path to external prompt | - |
+| `--create-sample-prompt` | Saves a sample prompt to "custom_prompt.txt" | - |
 
 ## 📈 Understanding the Output
 
@@ -289,7 +291,7 @@ The AI model is prompted to look for:
 
 - [ ] Add better error handling logic
 - [ ] Let users choose to analyze the commits in ascending or descending order
-- [ ] Allow using custom prompts
+- [X] Allow using custom prompts
 - [ ] Make report output more customizable
 - [ ] If ollama lists a single model, use it by default
 - [ ] Consider supporting more backends

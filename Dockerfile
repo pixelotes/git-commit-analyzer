@@ -22,7 +22,7 @@ RUN pip install --no-cache-dir requests
 RUN curl -fsSL https://ollama.com/install.sh | sh
 
 # Download default model
-RUN ollama pull qwen2.5-coder:3b
+RUN ollama serve & ollama pull qwen2.5-coder:3b
 
 # Copy the analyzer script
 COPY git_commit_analyzer.py /app/git_commit_analyzer.py

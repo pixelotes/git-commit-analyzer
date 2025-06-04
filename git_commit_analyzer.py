@@ -244,9 +244,12 @@ REASONING: Brief explanation of your analysis, one or two sentences max."""
             verdict = "ERROR"
             reasoning = "Could not parse AI response"
             
-            # Save response.json()
+            # Save response.json() to a directory named after the repository
+            repo_dir_name = os.path.basename(os.path.abspath(self.repo_path))
+            save_dir = os.path.join(os.getcwd(), repo_dir_name)
+            os.makedirs(save_dir, exist_ok=True)
             if self.debug:
-                with open(f"{commit['hash']}.json", "w", encoding="utf-8") as f:
+                with open(os.path.join(save_dir, f"{commit['hash']}.json"), "w", encoding="utf-8") as f:
                     json.dump(result, f, indent=2, ensure_ascii=False)
 
             lines = ai_response.split('\n')

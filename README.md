@@ -295,6 +295,7 @@ The AI model is prompted to look for:
 - [ ] Make report output more customizable
 - [ ] If ollama lists a single model, use it by default
 - [ ] Consider supporting more backends
+- [ ] Add an option to send the summary report to Slack
 
 ## 🤝 Contributing
 

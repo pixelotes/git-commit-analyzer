@@ -70,6 +70,14 @@ ollama serve
 
 The service will be available at `http://localhost:11434` by default.
 
+### 3. Pull a model
+
+Make sure Ollama is running:
+```bash
+# suggested model, feel free to try others
+ollama pull qwen2.5-coder:7b
+```
+
 ## 🐳 Docker Usage (Recommended)
 
 ### Build the Docker Image

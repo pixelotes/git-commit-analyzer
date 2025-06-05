@@ -1,417 +1,532 @@
 #!/usr/bin/env python3
 """
-Git Commit Security Analyzer (Ollama Version)
-
-This script analyzes git commits between two dates and uses Ollama to check for
-suspicious or malicious code changes.
-
-Usage:
-    python git_commit_analyzer.py --repo /path/to/repo --start-date "YYYY-MM-DD" --end-date "YYYY-MM-DD" 
-                                  [--api-url "http://localhost:11434/api/generate"] [--model "llama3"]
-                                  [--timeout 120] [--debug]
+Git Commit Security Analyzer with External Prompt Support
+A Python tool that analyzes git commits for suspicious or malicious code changes using AI-powered analysis through Ollama.
+Enhanced with support for external custom prompts.
 """
 
 import argparse
-import datetime
 import json
 import os
 import subprocess
 import sys
 import time
+from datetime import datetime
+from typing import Dict, List, Optional, Tuple
 import requests
-from typing import List, Dict, Tuple, Optional
 
 
-def parse_arguments():
-    parser = argparse.ArgumentParser(description="Analyze git commits for suspicious code using Ollama")
-    parser.add_argument("--repo", required=True, help="Path to the git repository")
-    parser.add_argument("--start-date", required=True, help="Start date (YYYY-MM-DD)")
-    parser.add_argument("--end-date", required=True, help="End date (YYYY-MM-DD)")
-    parser.add_argument("--api-url", default="http://localhost:11434/api/generate",
-                        help="Ollama API URL (default: http://localhost:11434/api/generate)")
-    parser.add_argument("--model", help="Model to use (if not specified, will show available models)")
-    parser.add_argument("--output", default="security_report.json", help="Output file for results")
-    parser.add_argument("--debug", action="store_true", help="Enable detailed debug output")
-    parser.add_argument("--timeout", type=int, default=120, help="API request timeout in seconds (default: 120)")
-    return parser.parse_args()
-
-
-def get_available_models(api_url: str) -> List[Dict]:
-    """Query Ollama for available models"""
-    try:
-        # Convert generate URL to tags URL
-        base_url = api_url.replace('/api/generate', '')
-        tags_url = f"{base_url}/api/tags"
+class GitCommitAnalyzer:
+    def __init__(self, repo_path: str, api_url: str = "http://localhost:11434/api/generate", 
+                 timeout: int = 120, debug: bool = False, prompt_file: Optional[str] = None):
+        self.repo_path = repo_path
+        self.api_url = api_url
+        self.timeout = timeout
+        self.debug = debug
+        self.prompt_file = prompt_file
+        self.default_prompt = self._get_default_prompt()
+        self.custom_prompt = self._load_custom_prompt() if prompt_file else None
         
-        print("Querying available models...", end="", flush=True)
-        response = requests.get(tags_url, timeout=10)
-        response.raise_for_status()
-        
-        data = response.json()
-        models = data.get('models', [])
-        print(f" found {len(models)} models.")
-        return models
-    except requests.exceptions.RequestException as e:
-        print(f"\nError querying available models: {e}")
-        print("Make sure Ollama is running and accessible.")
-        sys.exit(1)
-    except Exception as e:
-        print(f"\nUnexpected error getting models: {e}")
-        sys.exit(1)
+    def _get_default_prompt(self) -> str:
+        """Get the default security analysis prompt."""
+        return """You are a security expert analyzing git commit diffs for potentially malicious or suspicious code changes.
 
+Analyze the following git commit diff and determine if it contains any suspicious or malicious patterns:
 
-def select_model_interactively(models: List[Dict]) -> str:
-    """Present available models and let user choose"""
-    if not models:
-        print("No models available. Please install a model in Ollama first.")
-        sys.exit(1)
-    
-    print("\nAvailable models:")
-    for i, model in enumerate(models, 1):
-        name = model['name']
-        size = model.get('size', 0)
-        modified = model.get('modified_at', 'Unknown')
-        
-        # Convert size to human readable format
-        if size > 0:
-            if size >= 1024**3:
-                size_str = f"{size / (1024**3):.1f} GB"
-            elif size >= 1024**2:
-                size_str = f"{size / (1024**2):.1f} MB"
-            else:
-                size_str = f"{size / 1024:.1f} KB"
-        else:
-            size_str = "Unknown size"
-        
-        print(f"  {i}. {name} ({size_str})")
-    
-    while True:
-        try:
-            choice = input(f"\nSelect a model (1-{len(models)}): ").strip()
-            index = int(choice) - 1
-            if 0 <= index < len(models):
-                selected_model = models[index]['name']
-                print(f"Selected model: {selected_model}")
-                return selected_model
-            else:
-                print(f"Please enter a number between 1 and {len(models)}")
-        except ValueError:
-            print("Please enter a valid number")
-        except KeyboardInterrupt:
-            print("\nExiting...")
-            sys.exit(0)
-
-
-def get_commits_between_dates(repo_path: str, start_date: str, end_date: str) -> List[str]:
-    try:
-        print("Fetching commits...", end="", flush=True)
-        cmd = [
-            "git", "-C", repo_path, "log",
-            f"--since={start_date}", f"--until={end_date}",
-            "--format=%H"
-        ]
-        result = subprocess.run(cmd, capture_output=True, text=True, check=True)
-        commits = result.stdout.strip().split('\n')
-        valid_commits = [c for c in commits if c]
-        print(f" found {len(valid_commits)} commits.")
-        return valid_commits
-    except subprocess.CalledProcessError as e:
-        print(f"\nError getting commits: {e}")
-        print(f"STDERR: {e.stderr}")
-        sys.exit(1)
-
-
-def get_commit_details(repo_path: str, commit_hash: str) -> Dict:
-    try:
-        cmd_message = ["git", "-C", repo_path, "log", "-1", "--pretty=format:%s%n%b", commit_hash]
-        message_result = subprocess.run(cmd_message, capture_output=True, text=True, check=True)
-        commit_message = message_result.stdout.strip()
-
-        cmd_info = ["git", "-C", repo_path, "log", "-1", "--pretty=format:%an <%ae>%n%ad", commit_hash]
-        info_result = subprocess.run(cmd_info, capture_output=True, text=True, check=True)
-        info_lines = info_result.stdout.strip().split('\n')
-        author = info_lines[0]
-        date = info_lines[1] if len(info_lines) > 1 else "Unknown"
-
-        print("  Fetching diff...", end="", flush=True)
-        cmd_diff = ["git", "-C", repo_path, "show", commit_hash]
-        diff_result = subprocess.run(cmd_diff, capture_output=True, text=True, check=True)
-        diff_content = diff_result.stdout.strip()
-        print(" done.")
-
-        return {
-            "hash": commit_hash,
-            "author": author,
-            "date": date,
-            "message": commit_message,
-            "diff": diff_content
-        }
-    except subprocess.CalledProcessError as e:
-        print(f"\n  Error getting commit details for {commit_hash}: {e}")
-        print(f"  STDERR: {e.stderr}")
-        return {
-            "hash": commit_hash,
-            "error": str(e),
-            "stderr": e.stderr
-        }
-
-
-def analyze_commit_with_ollama(commit_data: Dict, api_url: str, model: str, timeout: int = 120, debug: bool = False) -> Tuple[str, Optional[str], Optional[Dict], float]:
-    """Analyze commit with Ollama and return verdict, reasoning, raw_response, and analysis_time"""
-    start_time = time.time()
-    
-    system_prompt = """You are a security expert analyzing git commits for suspicious or malicious code.
-RESPONSE FORMAT REQUIREMENTS:
-1. Your first line MUST contain EXACTLY ONE of these two words:
-   - "OK"
-   - "SUSPICIOUS"
-2. Your second line MUST contain your reasoning for the verdict.
-3. Do not use any emojis in your response.
-4. Do not include any additional text before the verdict."""
-
-    user_prompt = create_prompt(commit_data)
-    
-    full_prompt = f"{system_prompt}\n\n{user_prompt}"
-
-    headers = {"Content-Type": "application/json"}
-    payload = {
-        "model": model,
-        "prompt": full_prompt,
-        "stream": False
-    }
-
-    payload_str = json.dumps(payload)
-    print(f"  Sending to Ollama for analysis (payload size: {len(payload_str)} bytes)...", end="", flush=True)
-
-    if len(payload_str) > 100_000:
-        print("\n  Warning: payload size exceeds 100KB. This may cause timeouts or hangs.")
-
-    raw_response = None
-    try:
-        response = requests.post(api_url, headers=headers, json=payload, timeout=timeout)
-        
-        # Store raw response text for debugging
-        raw_response_text = response.text
-        
-        # Check for HTTP errors and provide detailed output
-        if response.status_code != 200:
-            print(f"\n  ❌ HTTP Error: {response.status_code}")
-            print(f"  Response content: {raw_response_text[:1000]}")
-            analysis_time = time.time() - start_time
-            return "ERROR", f"HTTP {response.status_code}: {raw_response_text[:500]}...", {"status_code": response.status_code, "content": raw_response_text}, analysis_time
-        
-        print(" received response.")
-        
-        # Try to parse JSON response
-        try:
-            result = response.json()
-            raw_response = result  # Store the parsed JSON for debug output
-        except json.JSONDecodeError as e:
-            print(f"\n  ❌ JSON parse error: {e}")
-            print(f"  Raw response: {raw_response_text[:1000]}")
-            analysis_time = time.time() - start_time
-            return "ERROR", f"Failed to parse JSON response: {str(e)}. Raw response: {raw_response_text[:500]}...", {"content": raw_response_text}, analysis_time
-
-        # Debug output
-        if debug:
-            print("\n--- DEBUG: FULL API RESPONSE ---")
-            print(json.dumps(result, indent=2))
-            print("-------------------------------")
-
-        # Check if response has the expected format
-        if "response" not in result:
-            print(f"\n  ❌ Missing 'response' field in API response")
-            print(f"  Response structure: {list(result.keys())}")
-            analysis_time = time.time() - start_time
-            return "ERROR", f"Missing 'response' field in API response: {json.dumps(result)[:500]}...", result, analysis_time
-
-        ai_response = result["response"].strip()
-        
-        lines = ai_response.split('\n', 1)
-        verdict = lines[0].strip()
-        reasoning = lines[1].strip() if len(lines) > 1 else "No reasoning provided"
-
-        # Handle case where model outputs more text before the verdict
-        if verdict not in ["OK", "SUSPICIOUS"]:
-            # Try to find verdict in the text
-            if "OK" in ai_response.upper().split() and "SUSPICIOUS" not in ai_response.upper():
-                verdict = "OK"
-                print(f"  Warning: AI returned improperly formatted verdict. Found 'OK' in response.")
-            elif "SUSPICIOUS" in ai_response.upper():
-                verdict = "SUSPICIOUS"
-                print(f"  Warning: AI returned improperly formatted verdict. Found 'SUSPICIOUS' in response.")
-            else:
-                print(f"  Warning: AI returned invalid verdict. Treating as SUSPICIOUS.")
-                verdict = "SUSPICIOUS"
-                
-            if not reasoning or reasoning == "No reasoning provided":
-                reasoning = f"AI response: {ai_response}"
-
-        analysis_time = time.time() - start_time
-        return verdict, reasoning, raw_response, analysis_time
-
-    except requests.exceptions.Timeout:
-        print("\n  ❌ Error: API call timed out after 120 seconds.")
-        analysis_time = time.time() - start_time
-        return "ERROR", "Timeout while waiting for Ollama response (120s).", None, analysis_time
-    except requests.exceptions.RequestException as e:
-        print(f"\n  ❌ Error calling Ollama API: {e}")
-        analysis_time = time.time() - start_time
-        return "ERROR", f"Request exception: {str(e)}", None, analysis_time
-    except Exception as e:
-        print(f"\n  ❌ Unexpected error: {e}")
-        analysis_time = time.time() - start_time
-        return "ERROR", f"Unexpected error: {str(e)}", raw_response, analysis_time
-
-
-def create_prompt(commit_data: Dict) -> str:
-    return f"""Analyze this git commit for suspicious or malicious code:
-
-COMMIT HASH: {commit_data['hash']}
-AUTHOR: {commit_data['author']}
-DATE: {commit_data['date']}
-COMMIT MESSAGE:
-{commit_data['message']}
+COMMIT INFORMATION:
+- Hash: {hash}
+- Author: {author}
+- Date: {date}
+- Message: {message}
 
 DIFF:
-{commit_data['diff']}
+{diff}
 
-IMPORTANT: Your response MUST follow this exact format:
-1. First line: ONLY the verdict ("OK" or "SUSPICIOUS")
-2. Second line: Your reasoning for the verdict
-Do not use emojis or include any text before the verdict.
-"""
+INSTRUCTIONS:
+Look for:
+- Suspicious code patterns (obfuscated code, unusual encodings)
+- Potential security vulnerabilities (SQL injection, XSS, command injection)
+- Malicious code injection (backdoors, unauthorized access mechanisms)
+- Unusual or suspicious file operations
+- Network requests to suspicious domains
+- Credential harvesting or data exfiltration attempts
+- Code that appears to be intentionally hidden or obfuscated
 
 
-def format_time(seconds: float) -> str:
-    """Format time in a human-readable way"""
-    if seconds < 1:
-        return f"{seconds * 1000:.0f}ms"
-    elif seconds < 60:
-        return f"{seconds:.1f}s"
-    else:
-        minutes = int(seconds // 60)
-        remaining_seconds = seconds % 60
-        return f"{minutes}m {remaining_seconds:.1f}s"
+If the commit appears safe and contains normal development changes, respond with PASS.
+If the commit contains potentially suspicious or malicious changes, respond with FAIL.
+
+OUTPUT:
+Anwer only with these two lines:
+VERDICT: PASS or FAIL
+REASONING: Brief explanation of your analysis, one or two sentences max."""
+
+    def _load_custom_prompt(self) -> Optional[str]:
+        """Load custom prompt from external file."""
+        try:
+            if not os.path.exists(self.prompt_file):
+                print(f"Warning: Prompt file '{self.prompt_file}' not found. Using default prompt.")
+                return None
+                
+            with open(self.prompt_file, 'r', encoding='utf-8') as f:
+                prompt = f.read().strip()
+                
+            if not prompt:
+                print(f"Warning: Prompt file '{self.prompt_file}' is empty. Using default prompt.")
+                return None
+                
+            print(f"Loaded custom prompt from: {self.prompt_file}")
+            return prompt
+            
+        except Exception as e:
+            print(f"Error loading prompt file '{self.prompt_file}': {e}")
+            print("Using default prompt instead.")
+            return None
+
+    def get_active_prompt(self) -> str:
+        """Get the currently active prompt (custom or default)."""
+        return self.custom_prompt if self.custom_prompt else self.default_prompt
+
+    def get_available_models(self) -> List[str]:
+        """Get list of available Ollama models."""
+        try:
+            response = requests.get(f"{self.api_url.replace('/api/generate', '/api/tags')}", timeout=10)
+            response.raise_for_status()
+            models = response.json().get('models', [])
+            return [model['name'] for model in models]
+        except Exception as e:
+            if self.debug:
+                print(f"Error querying available models: {e}")
+            return []
+
+    def select_model(self, model_name: Optional[str] = None) -> str:
+        """Select model to use for analysis."""
+        models = self.get_available_models()
+        
+        if not models:
+            print("Error: No Ollama models found. Please ensure Ollama is running and has models installed.")
+            sys.exit(1)
+            
+        if len(models) == 1:
+            selected_model = models[0]
+            print(f"Using single available model: {selected_model}")
+            return selected_model
+            
+        if model_name:
+            if model_name in models:
+                print(f"Using specified model: {model_name}")
+                return model_name
+            else:
+                print(f"Warning: Model '{model_name}' not found in available models.")
+                print("Available models:")
+                for i, model in enumerate(models, 1):
+                    print(f"  {i}. {model}")
+                print(f"Falling back to interactive selection...")
+
+        # Interactive model selection
+        print("\nAvailable Ollama models:")
+        for i, model in enumerate(models, 1):
+            print(f"  {i}. {model}")
+            
+        while True:
+            try:
+                choice = input(f"\nSelect model (1-{len(models)}): ").strip()
+                index = int(choice) - 1
+                if 0 <= index < len(models):
+                    selected_model = models[index]
+                    print(f"Selected model: {selected_model}")
+                    return selected_model
+                else:
+                    print(f"Please enter a number between 1 and {len(models)}")
+            except (ValueError, KeyboardInterrupt):
+                print("\nExiting...")
+                sys.exit(1)
+
+    def get_commits_in_range(self, start_date: str, end_date: str) -> List[Dict]:
+        """Get commits in the specified date range."""
+        try:
+            # Change to repo directory
+            original_cwd = os.getcwd()
+            os.chdir(self.repo_path)
+            
+            # Get commits in date range with format: hash|author|date|subject
+            cmd = [
+                'git', 'log',
+                f'--since={start_date}',
+                f'--until={end_date}',
+                '--pretty=format:%H|%an <%ae>|%ai|%s',
+                '--no-merges'
+            ]
+            
+            result = subprocess.run(cmd, capture_output=True, text=True, check=True)
+            os.chdir(original_cwd)
+            
+            commits = []
+            for line in result.stdout.strip().split('\n'):
+                if line:
+                    parts = line.split('|', 3)
+                    if len(parts) == 4:
+                        commits.append({
+                            'hash': parts[0],
+                            'author': parts[1],
+                            'date': parts[2],
+                            'message': parts[3]
+                        })
+            
+            return commits
+            
+        except subprocess.CalledProcessError as e:
+            print(f"Error getting commits: {e}")
+            return []
+        except Exception as e:
+            print(f"Error: {e}")
+            return []
+
+    def get_commit_diff(self, commit_hash: str) -> str:
+        """Get the diff for a specific commit."""
+        try:
+            original_cwd = os.getcwd()
+            os.chdir(self.repo_path)
+            
+            cmd = ['git', 'show', '--format=', commit_hash]
+            result = subprocess.run(cmd, capture_output=True, text=True, check=True)
+            
+            os.chdir(original_cwd)
+            return result.stdout
+            
+        except subprocess.CalledProcessError as e:
+            if self.debug:
+                print(f"Error getting diff for {commit_hash}: {e}")
+            return ""
+        except Exception as e:
+            if self.debug:
+                print(f"Error: {e}")
+            return ""
+
+    def analyze_commit_with_ollama(self, commit: Dict, model: str) -> Tuple[str, str, float]:
+        """Analyze a commit using Ollama."""
+        diff = self.get_commit_diff(commit['hash'])
+        
+        if not diff:
+            return "ERROR", "Could not retrieve commit diff", 0.0
+            
+        # Format prompt with commit information
+        prompt = self.get_active_prompt().format(
+            hash=commit['hash'],
+            author=commit['author'],
+            date=commit['date'],
+            message=commit['message'],
+            diff=diff
+        )
+        
+        payload = {
+            "model": model,
+            "prompt": prompt,
+            "stream": False
+        }
+        
+        start_time = time.time()
+        
+        try:
+            response = requests.post(
+                self.api_url,
+                json=payload,
+                timeout=self.timeout
+            )
+            response.raise_for_status()
+            
+            analysis_time = time.time() - start_time
+            
+            result = response.json()
+            ai_response = result.get('response', '').strip()
+            
+            # Parse response
+            verdict = "ERROR"
+            reasoning = "Could not parse AI response"
+            
+            # Save response.json() to a directory named after the repository
+            repo_dir_name = os.path.basename(os.path.abspath(self.repo_path))
+            save_dir = os.path.join(os.getcwd(), repo_dir_name)
+            os.makedirs(save_dir, exist_ok=True)
+            if self.debug:
+                with open(os.path.join(save_dir, f"{commit['hash']}.json"), "w", encoding="utf-8") as f:
+                    json.dump(result, f, indent=2, ensure_ascii=False)
+
+            lines = ai_response.split('\n')
+            for line in lines:
+                line = line.strip()
+                if line.startswith('VERDICT:'):
+                    verdict_text = line.replace('VERDICT:', '').strip().upper()
+                    if verdict_text in ['PASS', 'FAIL']:
+                        verdict = verdict_text
+                elif line.startswith('REASONING:'):
+                    reasoning = line.replace('REASONING:', '').strip()
+                    
+            return verdict, reasoning, analysis_time
+            
+        except requests.exceptions.Timeout:
+            return "ERROR", f"Request timeout after {self.timeout} seconds", time.time() - start_time
+        except Exception as e:
+            return "ERROR", f"Analysis failed: {str(e)}", time.time() - start_time
+
+    def analyze_commits(self, start_date: str, end_date: str, model: str, output_file: str):
+        """Analyze all commits in the specified range."""
+        print(f"Analyzing commits from {start_date} to {end_date}")
+        print(f"Using model: {model}")
+        if self.custom_prompt:
+            print(f"Using custom prompt from: {self.prompt_file}")
+        else:
+            print("Using default security analysis prompt")
+        print(f"Repository: {self.repo_path}")
+        print(f"Output file: {output_file}")
+        print("-" * 60)
+        
+        commits = self.get_commits_in_range(start_date, end_date)
+        
+        if not commits:
+            print("No commits found in the specified date range.")
+            return
+            
+        print(f"Found {len(commits)} commits to analyze\n")
+        
+        results = []
+        total_analysis_time = 0
+        
+        for i, commit in enumerate(commits, 1):
+            print(f"Processing commit {i}/{len(commits)}: {commit['hash'][:12]}")
+            print(f"Author: {commit['author']}")
+            print(f"Date: {commit['date']}")
+            print(f"Message: {commit['message']}")
+            
+            print("Sending to Ollama for analysis...", end=' ', flush=True)
+            
+            verdict, reasoning, analysis_time = self.analyze_commit_with_ollama(commit, model)
+            total_analysis_time += analysis_time
+            
+            print(f"received response.")
+            print(f"VERDICT: {verdict}")
+            print(f"REASONING: {reasoning}")
+            print(f"ANALYSIS TIME: {analysis_time:.1f}s")
+            
+            result = {
+                'hash': commit['hash'],
+                'author': commit['author'],
+                'date': commit['date'],
+                'message': commit['message'],
+                'verdict': verdict,
+                'reasoning': reasoning,
+                'analysis_time_seconds': round(analysis_time, 2)
+            }
+            
+            results.append(result)
+            
+            progress = (i / len(commits)) * 100
+            print(f"Progress: {i}/{len(commits)} commits analyzed ({progress:.1f}%)")
+            print("-" * 60)
+        
+        # Add summary statistics
+        pass_count = sum(1 for r in results if r['verdict'] == 'PASS')
+        fail_count = sum(1 for r in results if r['verdict'] == 'FAIL')
+        error_count = sum(1 for r in results if r['verdict'] == 'ERROR')
+        avg_analysis_time = total_analysis_time / len(results) if results else 0
+        
+        summary = {
+            'analysis_summary': {
+                'total_commits': len(results),
+                'pass_count': pass_count,
+                'fail_count': fail_count,
+                'error_count': error_count,
+                'total_analysis_time_seconds': round(total_analysis_time, 2),
+                'average_analysis_time_seconds': round(avg_analysis_time, 2),
+                'model_used': model,
+                'prompt_type': 'custom' if self.custom_prompt else 'default',
+                'prompt_file': self.prompt_file if self.custom_prompt else None,
+                'analysis_date': datetime.now().isoformat(),
+                'date_range': {
+                    'start': start_date,
+                    'end': end_date
+                }
+            },
+            'commits': results
+        }
+        
+        # Save results
+        try:
+            with open(output_file, 'w', encoding='utf-8') as f:
+                json.dump(summary, f, indent=2, ensure_ascii=False)
+            print(f"\n✅ Analysis complete! Results saved to: {output_file}")
+        except Exception as e:
+            print(f"\n❌ Error saving results: {e}")
+            return
+            
+        # Print summary
+        print(f"\n📊 ANALYSIS SUMMARY:")
+        print(f"   Total commits analyzed: {len(results)}")
+        print(f"   PASS: {pass_count}")
+        print(f"   FAIL: {fail_count}")
+        print(f"   ERROR: {error_count}")
+        print(f"   Total analysis time: {total_analysis_time:.1f}s")
+        print(f"   Average time per commit: {avg_analysis_time:.1f}s")
+        
+        if fail_count > 0:
+            print(f"\n⚠️  {fail_count} commits flagged for review:")
+            for result in results:
+                if result['verdict'] == 'FAIL':
+                    print(f"   - {result['hash'][:12]}: {result['message'][:50]}...")
+
+
+def create_sample_prompt_file(filename: str = "custom_prompt.txt"):
+    """Create a sample custom prompt file."""
+    sample_prompt = """You are an expert code reviewer analyzing git commit diffs.
+
+COMMIT DETAILS:
+- Hash: {hash}
+- Author: {author}
+- Date: {date}
+- Message: {message}
+
+CODE CHANGES:
+{diff}
+
+Please analyze this commit for:
+1. Code quality issues
+2. Potential bugs or vulnerabilities
+3. Security concerns
+4. Best practice violations
+
+Focus specifically on:
+- Input validation
+- Authentication/authorization issues
+- Data handling and storage
+- Network communications
+- File operations
+
+Provide your assessment:
+VERDICT: PASS or FAIL
+REASONING: Detailed explanation of your findings
+
+Use PASS for normal, safe changes and FAIL for potentially problematic changes."""
+    
+    try:
+        with open(filename, 'w', encoding='utf-8') as f:
+            f.write(sample_prompt)
+        print(f"Sample prompt file created: {filename}")
+        print("You can modify this file to customize the analysis prompt.")
+    except Exception as e:
+        print(f"Error creating sample prompt file: {e}")
 
 
 def main():
-    args = parse_arguments()
-
-    print(f"Analyzing commits in {args.repo} from {args.start_date} to {args.end_date}")
-    print(f"Using Ollama API at {args.api_url}")
-    print(f"API timeout: {args.timeout} seconds")
+    parser = argparse.ArgumentParser(
+        description="Analyze git commits for suspicious or malicious code changes using AI (Ollama)",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Examples:
+  # Basic usage with interactive model selection
+  python git_commit_analyzer.py --repo /path/to/repo --start-date "2024-01-01" --end-date "2024-01-31"
+  
+  # With specific model
+  python git_commit_analyzer.py --repo /path/to/repo --start-date "2024-01-01" --end-date "2024-01-31" --model "qwen2.5-coder:7b"
+  
+  # With custom prompt file
+  python git_commit_analyzer.py --repo /path/to/repo --start-date "2024-01-01" --end-date "2024-01-31" --prompt custom_security_prompt.txt
+  
+  # Create sample prompt file
+  python git_commit_analyzer.py --create-sample-prompt
+  
+  # With all options
+  python git_commit_analyzer.py \\
+    --repo /path/to/repo \\
+    --start-date "2024-01-01" \\
+    --end-date "2024-01-31" \\
+    --model "qwen2.5-coder:7b" \\
+    --prompt my_custom_prompt.txt \\
+    --output detailed_analysis.json \\
+    --timeout 180 \\
+    --debug
+        """
+    )
     
-    if args.debug:
-        print("Debug mode enabled - will print full API responses")
-
-    if not os.path.isdir(os.path.join(args.repo, ".git")):
-        print(f"Error: {args.repo} is not a valid git repository")
+    parser.add_argument('--repo', type=str, required=False,
+                      help='Path to the git repository')
+    parser.add_argument('--start-date', type=str, required=False,
+                      help='Start date in YYYY-MM-DD format')
+    parser.add_argument('--end-date', type=str, required=False,
+                      help='End date in YYYY-MM-DD format')
+    parser.add_argument('--model', type=str,
+                      help='Ollama model to use (if not specified, shows interactive selection)')
+    parser.add_argument('--api-url', type=str, default="http://localhost:11434/api/generate",
+                      help='Ollama API URL (default: http://localhost:11434/api/generate)')
+    parser.add_argument('--output', type=str,
+                      help='Output JSON file path (default: {repo-name}-report.json)')
+    parser.add_argument('--timeout', type=int, default=120,
+                      help='API request timeout in seconds (default: 120)')
+    parser.add_argument('--debug', action='store_true',
+                      help='Enable detailed debug output')
+    parser.add_argument('--prompt', type=str,
+                      help='Path to custom prompt file (uses default security prompt if not specified)')
+    parser.add_argument('--create-sample-prompt', action='store_true',
+                      help='Create a sample custom prompt file and exit')
+    
+    args = parser.parse_args()
+    
+    # Handle sample prompt creation
+    if args.create_sample_prompt:
+        create_sample_prompt_file()
+        return
+    
+    # Validate required arguments
+    if not args.repo or not args.start_date or not args.end_date:
+        parser.error("--repo, --start-date, and --end-date are required (unless using --create-sample-prompt)")
+    
+    # Validate repository path
+    if not os.path.exists(args.repo):
+        print(f"Error: Repository path '{args.repo}' does not exist.")
         sys.exit(1)
-
-    # Handle model selection
-    if not args.model:
-        available_models = get_available_models(args.api_url)
-        model = select_model_interactively(available_models)
-    else:
-        model = args.model
-        print(f"Using specified model: {model}")
-
-    # You can test your Ollama endpoint manually with:
-    # curl -X POST http://localhost:11434/api/generate -H "Content-Type: application/json" -d '{"model":"llama3","prompt":"Hello","stream":false}'
-
-    commit_hashes = get_commits_between_dates(args.repo, args.start_date, args.end_date)
-    total_commits = len(commit_hashes)
-
-    if total_commits == 0:
-        print("No commits found.")
-        sys.exit(0)
-
-    results = []
-    suspicious_count = 0
-    error_count = 0
-    total_analysis_time = 0.0
-
-    for i, commit_hash in enumerate(commit_hashes, 1):
-        print(f"\nProcessing commit {i}/{total_commits}: {commit_hash}")
-
-        commit_data = get_commit_details(args.repo, commit_hash)
-        if "error" in commit_data:
-            print(f"  Skipping commit due to error: {commit_data['error']}")
-            continue
-
-        print(f"  Author: {commit_data['author']}")
-        print(f"  Date: {commit_data['date']}")
-        print(f"  Message: {commit_data['message'].splitlines()[0][:60]}" + ("..." if len(commit_data['message'].splitlines()[0]) > 60 else ""))
-
-        verdict, reasoning, raw_response, analysis_time = analyze_commit_with_ollama(commit_data, args.api_url, model, args.timeout, args.debug)
-        total_analysis_time += analysis_time
-
-        result = {
-            "hash": commit_hash,
-            "author": commit_data["author"],
-            "date": commit_data["date"],
-            "message": commit_data["message"],
-            "verdict": verdict,
-            "reasoning": reasoning,
-            "analysis_time_seconds": round(analysis_time, 2)
-        }
         
-        # Add raw response to the result if there was an error and debug is enabled
-        if verdict == "ERROR" and raw_response:
-            result["raw_response"] = raw_response
-
-        results.append(result)
-
-        if verdict == "SUSPICIOUS":
-            suspicious_count += 1
-            print(f"  VERDICT: {verdict}")
-        elif verdict == "OK":
-            print(f"  VERDICT: {verdict}")
-        else:
-            error_count += 1
-            print(f"  VERDICT: {verdict}")
-
-        if reasoning:
-            # For errors, print the full reasoning
-            if verdict == "ERROR":
-                print(f"  ERROR DETAILS: {reasoning}")
-            else:
-                print(f"  REASONING: {reasoning}")
-
-        print(f"  ANALYSIS TIME: {format_time(analysis_time)}")
-
-        # Save results after each commit in case of interruption
-        with open(args.output, 'w') as f:
-            json.dump(results, f, indent=2)
-
-        print(f"  Progress: {i}/{total_commits} commits analyzed ({(i / total_commits) * 100:.1f}%)")
-
-    print(f"\n--- ANALYSIS SUMMARY ---")
-    print(f"Total commits analyzed: {total_commits}")
-    print(f"Suspicious commits: {suspicious_count}")
-    print(f"Errors encountered: {error_count}")
-    print(f"Total analysis time: {format_time(total_analysis_time)}")
-    if total_commits > 0:
-        avg_time = total_analysis_time / total_commits
-        print(f"Average time per commit: {format_time(avg_time)}")
-    print(f"Detailed report saved to: {args.output}")
-
-    if suspicious_count > 0:
-        print("\nSuspicious commits:")
-        for result in results:
-            if result["verdict"] == "SUSPICIOUS":
-                analysis_time_str = format_time(result["analysis_time_seconds"])
-                print(f"- {result['hash'][:8]}: {result['message'].splitlines()[0][:60]}" +
-                      ("..." if len(result['message'].splitlines()[0]) > 60 else "") +
-                      f" (analyzed in {analysis_time_str})")
+    if not os.path.exists(os.path.join(args.repo, '.git')):
+        print(f"Error: '{args.repo}' is not a git repository.")
+        sys.exit(1)
     
-    if error_count > 0:
-        print("\nCommits with errors:")
-        for result in results:
-            if result["verdict"] == "ERROR":
-                analysis_time_str = format_time(result["analysis_time_seconds"])
-                print(f"- {result['hash'][:8]}: {result['reasoning'][:100]}... (failed after {analysis_time_str})")
+    # Set output file if not specified
+    if not args.output:
+        repo_name = os.path.basename(os.path.abspath(args.repo))
+        args.output = f"{repo_name}-report.json"
+    
+    # Validate custom prompt file if specified
+    if args.prompt and not os.path.exists(args.prompt):
+        print(f"Warning: Custom prompt file '{args.prompt}' not found.")
+        choice = input("Continue with default prompt? (y/N): ").strip().lower()
+        if choice != 'y':
+            print("Exiting...")
+            sys.exit(1)
+        args.prompt = None
+    
+    try:
+        # Initialize analyzer
+        analyzer = GitCommitAnalyzer(
+            repo_path=args.repo,
+            api_url=args.api_url,
+            timeout=args.timeout,
+            debug=args.debug,
+            prompt_file=args.prompt
+        )
+        
+        # Select model
+        model = analyzer.select_model(args.model)
+        
+        # Run analysis
+        analyzer.analyze_commits(args.start_date, args.end_date, model, args.output)
+        
+    except KeyboardInterrupt:
+        print("\n\nAnalysis interrupted by user.")
+        sys.exit(1)
+    except Exception as e:
+        print(f"\nUnexpected error: {e}")
+        if args.debug:
+            import traceback
+            traceback.print_exc()
+        sys.exit(1)
 
 
 if __name__ == "__main__":

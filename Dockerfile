@@ -9,6 +9,7 @@ LABEL version="1.0"
 RUN apt-get update && \
     apt-get install -y \
     git \
+    curl \
     && rm -rf /var/lib/apt/lists/*
 
 # Set working directory
@@ -16,6 +17,9 @@ WORKDIR /app
 
 # Install Python dependencies
 RUN pip install --no-cache-dir requests
+
+# Install ollama
+RUN curl -fsSL https://ollama.com/install.sh | sh
 
 # Copy the analyzer script
 COPY git_commit_analyzer.py /app/git_commit_analyzer.py

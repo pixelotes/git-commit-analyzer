@@ -193,7 +193,7 @@ python git_commit_analyzer.py \
 |--------|-------------|---------|
 | `--repo` | Path to the git repository (required) | - |
 | `--start-date` | Start date in YYYY-MM-DD format (required) | - |
-| `--end-date` | End date in YYYY-MM-DD format (required) | - |
+| `--end-date` | End date in YYYY-MM-DD format | `current date` |
 | `--model` | Ollama model to use (if not specified, shows interactive selection) | - |
 | `--api-url` | Ollama API URL | `http://localhost:11434/api/generate` |
 | `--output` | Output JSON file path | `{repo-name}-report.json` |

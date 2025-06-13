@@ -5,6 +5,9 @@ set -e
 ollama serve &
 sleep 5  # Wait for Ollama to initialize
 
+# Pull the model
+ollama pull "$INPUT_MODEL"
+
 # Run analysis
 python git_commit_analyzer.py \
   --repo /github/workspace \

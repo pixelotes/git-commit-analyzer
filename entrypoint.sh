@@ -11,8 +11,8 @@ ollama pull "$INPUT_MODEL"
 # Run analysis
 python git_commit_analyzer.py \
   --repo /github/workspace \
-  --start-date "$INPUT_START_DATE" \
-  --end-date "$INPUT_END_DATE" \
+  --start-date "${INPUT_START_DATE%%T*}" \
+  --end-date "${INPUT_END_DATE%%T*}" \
   --model "$INPUT_MODEL" \
   --output "$GITHUB_WORKSPACE/security-report.json"
 

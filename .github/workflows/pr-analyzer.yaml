@@ -16,6 +16,6 @@ jobs:
       - name: Run Security Analysis
         uses: pixelotes/git-commit-analyzer@feat/gha
         with:
-          start_date: ${{ github.event.pull_request.created_at[:10] }}
-          end_date: ${{ github.event.pull_request.head.repo.updated_at[:10] }}
+          start_date: ${{ github.event.pull_request.created_at }}
+          end_date: ${{ github.event.pull_request.head.repo.updated_at }}
           model: 'qwen2.5-coder:3b'

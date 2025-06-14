@@ -1,0 +1,101 @@
+{
+  "analysis_summary": {
+    "total_commits": 9,
+    "pass_count": 4,
+    "fail_count": 4,
+    "error_count": 1,
+    "total_analysis_time_seconds": 393.69,
+    "average_analysis_time_seconds": 43.74,
+    "model_used": "qwen2.5-coder:3b",
+    "prompt_type": "default",
+    "prompt_file": null,
+    "analysis_date": "2025-06-14T11:48:28.245406",
+    "date_range": {
+      "start": "2025-06-01",
+      "end": "2025-06-13"
+    }
+  },
+  "commits": [
+    {
+      "hash": "e14b8de08565053d1c0abd4cd407e60a73009e3d",
+      "author": "pixelotes <donpastor@gmail.com>",
+      "date": "2025-06-05 09:47:02 +0200",
+      "message": "Update Dockerfile",
+      "verdict": "PASS",
+      "reasoning": "The commit appears to be a routine update to the Dockerfile, installing necessary dependencies and copying an analyzer script. There are no suspicious patterns, security vulnerabilities, malicious code injection attempts, unusual file operations, network requests to suspicious domains, credential harvesting or data exfiltration attempts, or intentionally hidden or obfuscated code detected in the provided diff.",
+      "analysis_time_seconds": 30.58
+    },
+    {
+      "hash": "66e982d63269bac787599c1f5938e4660d54dfa5",
+      "author": "pixelotes <donpastor@gmail.com>",
+      "date": "2025-06-04 22:39:02 +0200",
+      "message": "Update Dockerfile",
+      "verdict": "FAIL",
+      "reasoning": "The commit adds a new command to the Dockerfile that runs `ollama serve & ollama pull qwen2.5-coder:3b`, which could potentially allow for remote code execution if the OLLAMA_SERVER environment variable is misconfigured or used in an unauthorized manner. Additionally, running services like `ollama` without proper authentication or authorization can be seen as a security risk.",
+      "analysis_time_seconds": 28.05
+    },
+    {
+      "hash": "3abfa63e09aed1f6b025cb669eea52000b954f50",
+      "author": "pixelotes <donpastor@gmail.com>",
+      "date": "2025-06-04 22:36:34 +0200",
+      "message": "Update Dockerfile",
+      "verdict": "PASS",
+      "reasoning": "The commit is focused on updating a Dockerfile by installing the `curl` package and removing unnecessary files. These changes are typical for maintaining a secure and functional container environment. There are no suspicious patterns, security vulnerabilities, malicious code injection attempts, unusual file operations, network requests to suspicious domains, credential harvesting or data exfiltration attempts, or intentionally hidden or obfuscated code present in this commit diff.",
+      "analysis_time_seconds": 29.67
+    },
+    {
+      "hash": "3b88a8ab47f9a764ae6ab6f0251d55ea03c63b27",
+      "author": "pixelotes <donpastor@gmail.com>",
+      "date": "2025-06-04 22:32:55 +0200",
+      "message": "Update Dockerfile",
+      "verdict": "FAIL",
+      "reasoning": "The commit introduces an installation of Ollama and a default model download, which could be used for malicious purposes if the code is exploited. Additionally, the use of `curl` to install software without checking its source integrity poses a security risk.",
+      "analysis_time_seconds": 42.38
+    },
+    {
+      "hash": "9dc988f123bcddc6a0e46ca72b626a27d76009c7",
+      "author": "pixelotes <donpastor@gmail.com>",
+      "date": "2025-06-04 22:30:15 +0200",
+      "message": "feat: save directory",
+      "verdict": "FAIL",
+      "reasoning": "The commit modifies how AI responses are saved by saving them to a directory named after the repository's path. This could potentially allow unauthorized access if the user has write permissions in that directory. Additionally, there is no code to verify or sanitize the response content before writing it to disk, which could lead to security vulnerabilities if the response is maliciously crafted.",
+      "analysis_time_seconds": 47.93
+    },
+    {
+      "hash": "0f874a850aa8a4527223479dd62890cb6fbe533e",
+      "author": "pixelotes <donpastor@gmail.com>",
+      "date": "2025-06-04 22:11:41 +0200",
+      "message": "Update README.md",
+      "verdict": "FAIL",
+      "reasoning": "The commit message and diff do not indicate any malicious or suspicious code changes. Only a minor update to the README file was made. No unusual patterns or security vulnerabilities were found.",
+      "analysis_time_seconds": 28.18
+    },
+    {
+      "hash": "8dfd9dc42a2d191e7f2ea43d71744502ecfa3251",
+      "author": "pixelotes <donpastor@gmail.com>",
+      "date": "2025-06-04 21:38:58 +0200",
+      "message": "Update README.md",
+      "verdict": "PASS",
+      "reasoning": "The commit message and diff do not indicate any suspicious or malicious patterns. They are normal development changes related to updating a README file with minor modifications.",
+      "analysis_time_seconds": 25.25
+    },
+    {
+      "hash": "513109a5ffaa365cced12fb801063d4706e7df7c",
+      "author": "pixelotes <donpastor@gmail.com>",
+      "date": "2025-06-04 21:32:05 +0200",
+      "message": "Update README.md",
+      "verdict": "PASS",
+      "reasoning": "The commit updates the README.md file to add a new option `--prompt` and `--create-sample-prompt`, which are standard command-line options for setting custom prompts and saving sample prompts. These changes do not indicate any malicious or suspicious patterns, security vulnerabilities, code injection, or unusual file operations.",
+      "analysis_time_seconds": 41.64
+    },
+    {
+      "hash": "6076bff0aa6b03f8ede6e54cf0b0c58fc0b66b70",
+      "author": "pixelotes <donpastor@gmail.com>",
+      "date": "2025-06-04 21:02:34 +0200",
+      "message": "feat: add custom prompt",
+      "verdict": "ERROR",
+      "reasoning": "Request timeout after 120 seconds",
+      "analysis_time_seconds": 120.01
+    }
+  ]
+}

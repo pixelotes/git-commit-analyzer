@@ -12,7 +12,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Run Security Analysis
-        uses: pixelotes/git-commit-analyzer@feat/gha
+        uses: pixelotes/git-commit-analyzer@main
         with:
           start_date: ${{ github.event.pull_request.created_at }}
           end_date: ${{ github.event.pull_request.head.repo.updated_at }}

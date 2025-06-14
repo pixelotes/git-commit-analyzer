@@ -43,6 +43,7 @@ DIFF:
 {diff}
 
 INSTRUCTIONS:
+
 Look for:
 - Suspicious code patterns (obfuscated code, unusual encodings)
 - Potential security vulnerabilities (SQL injection, XSS, command injection)
@@ -443,6 +444,7 @@ Examples:
     --prompt my_custom_prompt.txt \\
     --output detailed_analysis.json \\
     --timeout 180 \\
+    --slack-webhook "https://hooks.slack.com/xxx" \\
     --debug
         """
     )

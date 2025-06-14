@@ -1,0 +1,101 @@
+{
+  "analysis_summary": {
+    "total_commits": 9,
+    "pass_count": 5,
+    "fail_count": 0,
+    "error_count": 4,
+    "total_analysis_time_seconds": 1240.81,
+    "average_analysis_time_seconds": 137.87,
+    "model_used": "qwen2.5-coder:1.5b",
+    "prompt_type": "default",
+    "prompt_file": null,
+    "analysis_date": "2025-06-14T20:18:02.442059",
+    "date_range": {
+      "start": "2025-06-01",
+      "end": "2025-06-06"
+    }
+  },
+  "commits": [
+    {
+      "hash": "e14b8de08565053d1c0abd4cd407e60a73009e3d",
+      "author": "pixelotes <donpastor@gmail.com>",
+      "date": "2025-06-05 09:47:02 +0200",
+      "message": "Update Dockerfile",
+      "verdict": "PASS",
+      "reasoning": "The commit message indicates a standard update to the Dockerfile. There are no suspicious patterns, potential security vulnerabilities, malicious code injection attempts, unusual file operations, network requests to suspicious domains, credential harvesting or data exfiltration attempts, or code that appears to be intentionally hidden or obfuscated.",
+      "analysis_time_seconds": 58.8
+    },
+    {
+      "hash": "66e982d63269bac787599c1f5938e4660d54dfa5",
+      "author": "pixelotes <donpastor@gmail.com>",
+      "date": "2025-06-04 22:39:02 +0200",
+      "message": "Update Dockerfile",
+      "verdict": "PASS",
+      "reasoning": "The commit message indicates an update to the Dockerfile and is not associated with any suspicious code patterns or vulnerabilities.",
+      "analysis_time_seconds": 73.09
+    },
+    {
+      "hash": "3abfa63e09aed1f6b025cb669eea52000b954f50",
+      "author": "pixelotes <donpastor@gmail.com>",
+      "date": "2025-06-04 22:36:34 +0200",
+      "message": "Update Dockerfile",
+      "verdict": "PASS",
+      "reasoning": "The commit contains normal development changes that do not appear to be suspicious or malicious. The Dockerfile update appears harmless and consistent with typical DevOps practices.",
+      "analysis_time_seconds": 64.6
+    },
+    {
+      "hash": "3b88a8ab47f9a764ae6ab6f0251d55ea03c63b27",
+      "author": "pixelotes <donpastor@gmail.com>",
+      "date": "2025-06-04 22:32:55 +0200",
+      "message": "Update Dockerfile",
+      "verdict": "ERROR",
+      "reasoning": "The commit diff provided does not contain any suspicious or malicious patterns that could indicate potential security vulnerabilities or malicious code injection attempts. It appears to be a simple update of the Dockerfile in the /app directory. There are no obfuscated code, unusual encodings, unauthorized access mechanisms, or other suspicious operations.",
+      "analysis_time_seconds": 75.93
+    },
+    {
+      "hash": "9dc988f123bcddc6a0e46ca72b626a27d76009c7",
+      "author": "pixelotes <donpastor@gmail.com>",
+      "date": "2025-06-04 22:30:15 +0200",
+      "message": "feat: save directory",
+      "verdict": "PASS",
+      "reasoning": "The provided git commit diff does not contain any suspicious or malicious patterns. It appears to be a normal development change that saves the AI response in a directory named after the repository.",
+      "analysis_time_seconds": 93.42
+    },
+    {
+      "hash": "0f874a850aa8a4527223479dd62890cb6fbe533e",
+      "author": "pixelotes <donpastor@gmail.com>",
+      "date": "2025-06-04 22:11:41 +0200",
+      "message": "Update README.md",
+      "verdict": "ERROR",
+      "reasoning": "The diff does not contain any suspicious or malicious patterns.",
+      "analysis_time_seconds": 70.78
+    },
+    {
+      "hash": "8dfd9dc42a2d191e7f2ea43d71744502ecfa3251",
+      "author": "pixelotes <donpastor@gmail.com>",
+      "date": "2025-06-04 21:38:58 +0200",
+      "message": "Update README.md",
+      "verdict": "ERROR",
+      "reasoning": "The commit appears to be attempting to introduce a new feature by adding an option to send the summary report to Slack. This is a good idea for improving transparency and user experience, but it could potentially lead to security vulnerabilities if not implemented properly. For example, if the report is sent over an insecure network or if the backdoor is configured in a way that allows unauthorized access, malicious users could exploit this vulnerability to gain access to sensitive information. Therefore, this commit contains potential malicious changes and should be reviewed carefully.",
+      "analysis_time_seconds": 88.54
+    },
+    {
+      "hash": "513109a5ffaa365cced12fb801063d4706e7df7c",
+      "author": "pixelotes <donpastor@gmail.com>",
+      "date": "2025-06-04 21:32:05 +0200",
+      "message": "Update README.md",
+      "verdict": "PASS",
+      "reasoning": "Could not parse AI response",
+      "analysis_time_seconds": 115.64
+    },
+    {
+      "hash": "6076bff0aa6b03f8ede6e54cf0b0c58fc0b66b70",
+      "author": "pixelotes <donpastor@gmail.com>",
+      "date": "2025-06-04 21:02:34 +0200",
+      "message": "feat: add custom prompt",
+      "verdict": "ERROR",
+      "reasoning": "Request timeout after 600 seconds",
+      "analysis_time_seconds": 600.01
+    }
+  ]
+}

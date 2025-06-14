@@ -1,0 +1,13 @@
+# Git Commit Security Analyzer - Python Dependencies
+# Core HTTP library for API requests to Ollama
+requests>=2.25.0
+
+# Note: The following are part of Python's standard library and don't need to be installed:
+# - argparse (built-in)
+# - json (built-in) 
+# - os (built-in)
+# - subprocess (built-in)
+# - sys (built-in)
+# - time (built-in)
+# - datetime (built-in)
+# - typing (built-in since Python 3.5)

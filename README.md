@@ -187,20 +187,29 @@ python git_commit_analyzer.py \
   --timeout 180
 ```
 
+# With Slack output
+python git_commit_analyzer.py \
+  --repo /path/to/repository \
+  --start-date "2024-01-01" \
+  --model qwen3:8b
+  --slack-webhook "https://<webhook>"
+```
+
 ## 📊 Command Line Options
 
 | Option | Description | Default |
 |--------|-------------|---------|
 | `--repo` | Path to the git repository (required) | - |
 | `--start-date` | Start date in YYYY-MM-DD format (required) | - |
-| `--end-date` | End date in YYYY-MM-DD format (required) | - |
+| `--end-date` | End date in YYYY-MM-DD format (required) | Current date |
 | `--model` | Ollama model to use (if not specified, shows interactive selection) | - |
 | `--api-url` | Ollama API URL | `http://localhost:11434/api/generate` |
 | `--output` | Output JSON file path | `{repo-name}-report.json` |
 | `--timeout` | API request timeout in seconds | `120` |
 | `--debug` | Saves LLM responses to .json files | `false` |
-| `--prompt` | Path to external prompt | - |
+| `--prompt` | Path to external prompt | Internal prompt |
 | `--create-sample-prompt` | Saves a sample prompt to "custom_prompt.txt" | - |
+| `--slack-webhook` | Posts a summary to Slack after finishing the analysis | - |
 
 ## 📈 Understanding the Output
 
@@ -289,13 +298,14 @@ The AI model is prompted to look for:
 
 ## 📝 To-Do
 
+- [X] Allow using custom prompts
+- [X] If ollama lists a single model, use it by default
+- [X] Add an option to send the summary report to Slack
+- [X] Make the end date optional, make current date default value
 - [ ] Add better error handling logic
 - [ ] Let users choose to analyze the commits in ascending or descending order
-- [X] Allow using custom prompts
 - [ ] Make report output more customizable
-- [X] If ollama lists a single model, use it by default
 - [ ] Consider supporting more backends
-- [ ] Add an option to send the summary report to Slack
 
 ## 🤝 Contributing
 

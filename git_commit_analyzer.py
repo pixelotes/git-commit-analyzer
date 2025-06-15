@@ -43,6 +43,7 @@ DIFF:
 {diff}
 
 INSTRUCTIONS:
+
 Look for:
 - Suspicious code patterns (obfuscated code, unusual encodings)
 - Potential security vulnerabilities (SQL injection, XSS, command injection)
@@ -443,6 +444,7 @@ Examples:
     --prompt my_custom_prompt.txt \\
     --output detailed_analysis.json \\
     --timeout 180 \\
+    --slack-webhook "https://hooks.slack.com/xxx" \\
     --debug
         """
     )
@@ -467,6 +469,8 @@ Examples:
                       help='Path to custom prompt file (uses default security prompt if not specified)')
     parser.add_argument('--create-sample-prompt', action='store_true',
                       help='Create a sample custom prompt file and exit')
+    parser.add_argument('--slack-webhook', type=str, required=False,
+                      help='Posts the end results to a Slack channel using a webhook URL')
     
     args = parser.parse_args()
     
@@ -476,9 +480,13 @@ Examples:
         return
     
     # Validate required arguments
-    if not args.repo or not args.start_date or not args.end_date:
-        parser.error("--repo, --start-date, and --end-date are required (unless using --create-sample-prompt)")
+    if not args.repo or not args.start_date:
+        parser.error("--repo and --start-date are required (unless using --create-sample-prompt)")
     
+    # Validate end date
+    if not args.end_date:
+        args.end_date = datetime.now().strftime("%Y-%m-%d")
+
     # Validate repository path
     if not os.path.exists(args.repo):
         print(f"Error: Repository path '{args.repo}' does not exist.")
@@ -517,6 +525,37 @@ Examples:
         
         # Run analysis
         analyzer.analyze_commits(args.start_date, args.end_date, model, args.output)
+
+        # Post results to Slack if webhook is provided
+        if args.slack_webhook:
+            try:
+                with open(args.output, 'r', encoding='utf-8') as f:
+                    report = json.load(f)
+                
+                # Build flagged commits list
+                flagged_commits = []
+                for commit in report['commits']:
+                    if commit['verdict'] in ['FAIL', 'ERROR']:
+                        flagged_commits.append(
+                            f"• {commit['hash'][:8]} - {commit['verdict']}: {commit['message'][:60]}{'...' if len(commit['message']) > 60 else ''}"
+                        )
+                
+                flagged_text = "\n".join(flagged_commits) if flagged_commits else "None"
+                
+                slack_payload = {
+                    "text": f"Git Commit Analysis Report for {os.path.basename(os.path.abspath(args.repo))}:\n"
+                            f"Total Commits: {report['analysis_summary']['total_commits']}\n"
+                            f"Pass: {report['analysis_summary']['pass_count']}, "
+                            f"Fail: {report['analysis_summary']['fail_count']}, "
+                            f"Errors: {report['analysis_summary']['error_count']}\n\n"
+                            f"Flagged Commits:\n{flagged_text}\n\n"
+                            f"Report saved to: {args.output}"
+                }
+                response = requests.post(args.slack_webhook, json=slack_payload)
+                response.raise_for_status()
+                print("Results posted to Slack successfully.")
+            except Exception as e:
+                print(f"Error posting results to Slack: {e}")
         
     except KeyboardInterrupt:
         print("\n\nAnalysis interrupted by user.")

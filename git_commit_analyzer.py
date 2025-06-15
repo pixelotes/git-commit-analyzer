@@ -531,12 +531,24 @@ Examples:
             try:
                 with open(args.output, 'r', encoding='utf-8') as f:
                     report = json.load(f)
+                
+                # Build flagged commits list
+                flagged_commits = []
+                for commit in report['commits']:
+                    if commit['verdict'] in ['FAIL', 'ERROR']:
+                        flagged_commits.append(
+                            f"• {commit['hash'][:8]} - {commit['verdict']}: {commit['message'][:60]}{'...' if len(commit['message']) > 60 else ''}"
+                        )
+                
+                flagged_text = "\n".join(flagged_commits) if flagged_commits else "None"
+                
                 slack_payload = {
-                    "text": f"Git Commit Analysis Report for {args.repo}:\n"
+                    "text": f"Git Commit Analysis Report for {os.path.basename(os.path.abspath(args.repo))}:\n"
                             f"Total Commits: {report['analysis_summary']['total_commits']}\n"
                             f"Pass: {report['analysis_summary']['pass_count']}, "
                             f"Fail: {report['analysis_summary']['fail_count']}, "
-                            f"Errors: {report['analysis_summary']['error_count']}\n"
+                            f"Errors: {report['analysis_summary']['error_count']}\n\n"
+                            f"Flagged Commits:\n{flagged_text}\n\n"
                             f"Report saved to: {args.output}"
                 }
                 response = requests.post(args.slack_webhook, json=slack_payload)

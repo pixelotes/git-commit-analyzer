@@ -6,7 +6,7 @@ RUN apt-get update && apt-get install -y git curl && rm -rf /var/lib/apt/lists/*
 COPY . .
 
 # Install Python dependencies
-RUN pip install --no-cache-dir requests
+RUN pip install -r requirements.txt --no-cache-dir
 
 # Install ollama
 RUN curl -fsSL https://ollama.com/install.sh | sh

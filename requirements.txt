@@ -1,6 +1,7 @@
 # Git Commit Security Analyzer - Python Dependencies
 # Core HTTP library for API requests to Ollama
 requests>=2.25.0
+python-dateutil>=2.8.0
 
 # Note: The following are part of Python's standard library and don't need to be installed:
 # - argparse (built-in)

@@ -1,0 +1,19 @@
+name: Security Commit Analysis
+
+on:
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  analyze-commits:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Run Security Analysis
+        uses: pixelotes/git-commit-analyzer@main
+        with:
+          start_date: ${{ github.event.pull_request.created_at }}
+          end_date: ${{ github.event.pull_request.head.repo.updated_at }}
+          model: 'qwen2.5-coder:3b'

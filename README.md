@@ -331,4 +331,3 @@ This tool is designed to assist in security analysis but should not be the sole 
 **IMPORTANT LEGAL DISCLAIMER**: This software is provided "as is" without warranty of any kind, express or implied. The author(s) disclaim all warranties, including but not limited to warranties of merchantability, fitness for a particular purpose, and non-infringement. In no event shall the author(s) be liable for any claim, damages, or other liability, whether in an action of contract, tort, or otherwise, arising from, out of, or in connection with the software or the use or other dealings in the software. 
 
 Users assume full responsibility for the use of this tool and any consequences resulting from its use. This tool is not intended to replace professional security audits or expert manual code review. Any security decisions made based on the output of this tool are the sole responsibility of the user.
-

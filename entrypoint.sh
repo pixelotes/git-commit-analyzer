@@ -79,7 +79,7 @@ if [ -n "$GITHUB_EVENT_PATH" ] && grep -q '"pull_request"' "$GITHUB_EVENT_PATH";
   if [ "$PR_CREATED_AT" != "null" ]; then
     if ! [ -n "$START_DATE" ]; then
         # Use PR created_at as start date (strip time)
-        START_DATE=$(echo "$PR_CREATED_AT" | cut -d'T' -f1)
+        START_DATE=$(echo "$PR_CREATED_AT")
     fi
 
     if ! [ -n "$END_DATE" ]; then
@@ -90,7 +90,7 @@ if [ -n "$GITHUB_EVENT_PATH" ] && grep -q '"pull_request"' "$GITHUB_EVENT_PATH";
 fi
 
 # Start date: 00:00:00 (beginning of day)
-START_DATETIME="${START_DATE}T00:00:00"
+START_DATETIME="${START_DATE}"
 # End date: 23:59:59 (end of day)
 END_DATETIME="${END_DATE}T23:59:59"
 

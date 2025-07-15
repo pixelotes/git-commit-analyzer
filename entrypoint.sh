@@ -49,6 +49,13 @@ else
     echo "jq is already installed: $(jq --version)"
 fi
 
+# Debug output
+echo "Current directory: $(pwd)"
+echo "GITHUB_ACTION_PATH: $GITHUB_ACTION_PATH"
+echo "GITHUB_WORKSPACE: $GITHUB_WORKSPACE"
+echo "Repository contents:"
+ls -la
+
 # Start Ollama in background
 ollama serve &
 sleep 5  # Wait for Ollama to initialize

@@ -88,6 +88,9 @@ END_DATETIME="${END_DATE}T23:59:59"
 # Debug print (optional)
 echo "Using start date: $START_DATETIME"
 echo "Using end date: $END_DATETIME"
+echo "Repository path: $GITHUB_WORKSPACE"
+echo "Using model: $INPUT_MODEL"
+echo "Output file: $GITHUB_WORKSPACE/security-report.json"
 
 # Run analysis with dates resolved
 python "/app/git_commit_analyzer.py" \

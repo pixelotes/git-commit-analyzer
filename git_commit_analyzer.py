@@ -552,12 +552,37 @@ Examples:
                     report = json.load(f)
                 
                 # Build flagged commits list
+                repo_name = analyzer.get_repo_name_from_git()
+                
+                # Try to get remote URL to build commit links
+                try:
+                    original_cwd = os.getcwd()
+                    os.chdir(args.repo)
+                    remote_url = subprocess.run(
+                        ["git", "config", "--get", "remote.origin.url"],
+                        capture_output=True, text=True, check=True
+                    ).stdout.strip()
+                    os.chdir(original_cwd)
+                
+                    # Normalize GitHub URL (remove .git, convert SSH to HTTPS)
+                    if remote_url.endswith(".git"):
+                        remote_url = remote_url[:-4]
+                    if remote_url.startswith("git@github.com:"):
+                        remote_url = "https://github.com/" + remote_url[len("git@github.com:"):]
+                except Exception:
+                    remote_url = None
+                
                 flagged_commits = []
                 for commit in report['commits']:
                     if commit['verdict'] in ['FAIL', 'ERROR']:
-                        flagged_commits.append(
-                            f"• {commit['hash'][:8]} - {commit['verdict']}: {commit['message'][:60]}{'...' if len(commit['message']) > 60 else ''}"
-                        )
+                        commit_hash = commit['hash'][:8]
+                        message_snippet = commit['message'][:60] + ('...' if len(commit['message']) > 60 else '')
+                        if remote_url:
+                            commit_url = f"{remote_url}/commit/{commit['hash']}"
+                            line = f"• <{commit_url}|{commit_hash}> - {commit['verdict']}: {message_snippet}"
+                        else:
+                            line = f"• {commit_hash} - {commit['verdict']}: {message_snippet}"
+                        flagged_commits.append(line)
                 
                 flagged_text = "\n".join(flagged_commits) if flagged_commits else "None"
                 

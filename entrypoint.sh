@@ -56,6 +56,7 @@ echo "GITHUB_WORKSPACE: $GITHUB_WORKSPACE"
 echo "Repository contents:"
 ls -la
 echo "Last 10 commits:"
+git config --global --add safe.directory $GITHUB_WORKSPACE
 git -C $GITHUB_WORKSPACE log --oneline -n 10
 
 

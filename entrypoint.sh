@@ -56,7 +56,7 @@ echo "GITHUB_WORKSPACE: $GITHUB_WORKSPACE"
 echo "Repository contents:"
 ls -la
 echo "Last 10 commits:"
-git log --oneline -n 10
+git -C $GITHUB_WORKSPACE log --oneline -n 10
 
 
 # Start Ollama in background

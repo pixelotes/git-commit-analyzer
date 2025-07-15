@@ -73,10 +73,15 @@ if [ -n "$GITHUB_EVENT_PATH" ] && grep -q '"pull_request"' "$GITHUB_EVENT_PATH";
   PR_CREATED_AT=$(jq -r '.pull_request.created_at' "$GITHUB_EVENT_PATH")
   
   if [ "$PR_CREATED_AT" != "null" ]; then
-    # Use PR created_at as start date (strip time)
-    START_DATE=$(echo "$PR_CREATED_AT" | cut -d'T' -f1)
-    # Use today as end date
-    END_DATE=$(date -u +%Y-%m-%d)
+    if ! [ -n "$START_DATE" ]; then
+        # Use PR created_at as start date (strip time)
+        START_DATE=$(echo "$PR_CREATED_AT" | cut -d'T' -f1)
+    fi
+
+    if ! [ -n "$END_DATE" ]; then
+        # Use today as end date
+        END_DATE=$(date -u +%Y-%m-%d)
+    fi
   fi
 fi
 
@@ -96,6 +101,7 @@ echo "Output file: $GITHUB_WORKSPACE/security-report.json"
 python "/app/git_commit_analyzer.py" \
   --repo $GITHUB_WORKSPACE/ \
   --start-date "$START_DATETIME" \
+  --end-date "$END_DATETIME" \
   --model "$INPUT_MODEL" \
   --output "$GITHUB_WORKSPACE/security-report.json"
 

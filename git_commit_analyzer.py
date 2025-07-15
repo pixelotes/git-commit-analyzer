@@ -544,11 +544,15 @@ Examples:
                 
                 slack_payload = {
                     "text": f"Git Commit Analysis Report for {os.path.basename(os.path.abspath(args.repo))}:\n"
+                            f"---\n"
+                            f"Analysis date: {report['analysis_summary']['analysis_date']}"
                             f"Total Commits: {report['analysis_summary']['total_commits']}\n"
                             f"Pass: {report['analysis_summary']['pass_count']}, "
                             f"Fail: {report['analysis_summary']['fail_count']}, "
                             f"Errors: {report['analysis_summary']['error_count']}\n\n"
                             f"Flagged Commits:\n{flagged_text}\n\n"
+                            f"Total analysis time: {report['analysis_summary']['total_analysis_time_seconds']}"
+                            f"Average time per commit: {report['analysis_summary']['average_analysis_time_seconds']}"
                             f"Report saved to: {args.output}"
                 }
                 response = requests.post(args.slack_webhook, json=slack_payload)

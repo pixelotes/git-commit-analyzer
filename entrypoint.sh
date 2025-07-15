@@ -80,15 +80,20 @@ if [ -n "$GITHUB_EVENT_PATH" ] && grep -q '"pull_request"' "$GITHUB_EVENT_PATH";
   fi
 fi
 
+# Start date: 00:00:00 (beginning of day)
+START_DATETIME="${START_DATE}T00:00:00"
+# End date: 23:59:59 (end of day)
+END_DATETIME="${END_DATE}T23:59:59"
+
 # Debug print (optional)
-echo "Using start date: $START_DATE"
-echo "Using end date: $END_DATE"
+echo "Using start date: $START_DATETIME"
+echo "Using end date: $END_DATETIME"
 
 # Run analysis with dates resolved
 python "/app/git_commit_analyzer.py" \
   --repo $GITHUB_WORKSPACE/ \
-  --start-date "$START_DATE" \
-  --end-date "$END_DATE" \
+  --start-date "$START_DATETIME" \
+  --end-date "$END_DATETIME" \
   --model "$INPUT_MODEL" \
   --output "$GITHUB_WORKSPACE/security-report.json"
 

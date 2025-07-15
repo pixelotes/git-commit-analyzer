@@ -11,10 +11,10 @@ inputs:
     default: 'qwen2.5-coder:3b'
   start_date:
     description: 'Start date for commit analysis (YYYY-MM-DD)'
-    required: true
+    required: false
   end_date:
     description: 'End date for commit analysis (YYYY-MM-DD)'
-    required: true
+    required: false
 
 runs:
   using: 'docker'

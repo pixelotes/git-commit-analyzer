@@ -62,6 +62,25 @@ Anwer only with these two lines:
 VERDICT: PASS or FAIL
 REASONING: Brief explanation of your analysis, one or two sentences max."""
 
+    
+    def get_repo_name_from_git(self) -> str:
+        """Get the actual repository name from the git config."""
+        try:
+            original_cwd = os.getcwd()
+            os.chdir(self.repo_path)
+            result = subprocess.run(
+                ["git", "config", "--get", "remote.origin.url"],
+                capture_output=True, text=True, check=True
+            )
+            os.chdir(original_cwd)
+            url = result.stdout.strip()
+            if url.endswith(".git"):
+                url = url[:-4]
+            return os.path.basename(url)
+        except Exception:
+            return os.path.basename(os.path.abspath(self.repo_path))
+
+    
     def _load_custom_prompt(self) -> Optional[str]:
         """Load custom prompt from external file."""
         try:
@@ -543,7 +562,7 @@ Examples:
                 flagged_text = "\n".join(flagged_commits) if flagged_commits else "None"
                 
                 slack_payload = {
-                    "text": f"Git Commit Analysis Report for {os.path.basename(os.path.abspath(args.repo))}:\n"
+                    "text": f"Git Commit Analysis Report for {analyzer.get_repo_name_from_git()}:\n"
                             f"---\n"
                             f"Analysis date: {report['analysis_summary']['analysis_date']}"
                             f"Total Commits: {report['analysis_summary']['total_commits']}\n"

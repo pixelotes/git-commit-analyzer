@@ -551,8 +551,8 @@ Examples:
                             f"Fail: {report['analysis_summary']['fail_count']}, "
                             f"Errors: {report['analysis_summary']['error_count']}\n\n"
                             f"Flagged Commits:\n{flagged_text}\n\n"
-                            f"Total analysis time: {report['analysis_summary']['total_analysis_time_seconds']}"
-                            f"Average time per commit: {report['analysis_summary']['average_analysis_time_seconds']}"
+                            f"Total analysis time: {report['analysis_summary']['total_analysis_time_seconds']}\n"
+                            f"Average time per commit: {report['analysis_summary']['average_analysis_time_seconds']}\n"
                             f"Report saved to: {args.output}"
                 }
                 response = requests.post(args.slack_webhook, json=slack_payload)

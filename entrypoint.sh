@@ -8,22 +8,22 @@ install_jq() {
     # Check for package managers and install accordingly
     if command -v apt-get &> /dev/null; then
         echo "Using apt-get (Debian/Ubuntu)"
-        sudo apt-get update && sudo apt-get install -y jq
+        apt-get update && apt-get install -y jq
     elif command -v yum &> /dev/null; then
         echo "Using yum (RHEL/CentOS)"
-        sudo yum install -y jq
+        yum install -y jq
     elif command -v dnf &> /dev/null; then
         echo "Using dnf (Fedora)"
-        sudo dnf install -y jq
+        dnf install -y jq
     elif command -v zypper &> /dev/null; then
         echo "Using zypper (openSUSE)"
-        sudo zypper install -y jq
+        zypper install -y jq
     elif command -v apk &> /dev/null; then
         echo "Using apk (Alpine)"
-        sudo apk add jq
+        apk add jq
     elif command -v pacman &> /dev/null; then
         echo "Using pacman (Arch)"
-        sudo pacman -S --noconfirm jq
+        pacman -S --noconfirm jq
     elif command -v brew &> /dev/null; then
         echo "Using brew (macOS/Linux)"
         brew install jq

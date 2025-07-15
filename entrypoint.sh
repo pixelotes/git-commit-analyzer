@@ -85,7 +85,7 @@ echo "Using start date: $START_DATE"
 echo "Using end date: $END_DATE"
 
 # Run analysis with dates resolved
-python "$GITHUB_ACTION_PATH/git_commit_analyzer.py" \
+python "/app/git_commit_analyzer.py" \
   --repo $GITHUB_WORKSPACE/ \
   --start-date "$START_DATE" \
   --end-date "$END_DATE" \

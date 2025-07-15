@@ -1,6 +1,54 @@
 #!/bin/sh
 set -e
 
+# Function to install jq based on available package manager
+install_jq() {
+    echo "jq not found. Installing..."
+    
+    # Check for package managers and install accordingly
+    if command -v apt-get &> /dev/null; then
+        echo "Using apt-get (Debian/Ubuntu)"
+        sudo apt-get update && sudo apt-get install -y jq
+    elif command -v yum &> /dev/null; then
+        echo "Using yum (RHEL/CentOS)"
+        sudo yum install -y jq
+    elif command -v dnf &> /dev/null; then
+        echo "Using dnf (Fedora)"
+        sudo dnf install -y jq
+    elif command -v zypper &> /dev/null; then
+        echo "Using zypper (openSUSE)"
+        sudo zypper install -y jq
+    elif command -v apk &> /dev/null; then
+        echo "Using apk (Alpine)"
+        sudo apk add jq
+    elif command -v pacman &> /dev/null; then
+        echo "Using pacman (Arch)"
+        sudo pacman -S --noconfirm jq
+    elif command -v brew &> /dev/null; then
+        echo "Using brew (macOS/Linux)"
+        brew install jq
+    else
+        echo "Error: No supported package manager found."
+        echo "Please install jq manually from: https://stedolan.github.io/jq/"
+        exit 1
+    fi
+}
+
+# Check if jq is installed
+if ! command -v jq &> /dev/null; then
+    install_jq
+    
+    # Verify installation
+    if command -v jq &> /dev/null; then
+        echo "jq successfully installed: $(jq --version)"
+    else
+        echo "Error: jq installation failed"
+        exit 1
+    fi
+else
+    echo "jq is already installed: $(jq --version)"
+fi
+
 # Start Ollama in background
 ollama serve &
 sleep 5  # Wait for Ollama to initialize

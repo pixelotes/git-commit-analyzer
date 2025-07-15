@@ -96,7 +96,6 @@ echo "Output file: $GITHUB_WORKSPACE/security-report.json"
 python "/app/git_commit_analyzer.py" \
   --repo $GITHUB_WORKSPACE/ \
   --start-date "$START_DATETIME" \
-  --end-date "$END_DATETIME" \
   --model "$INPUT_MODEL" \
   --output "$GITHUB_WORKSPACE/security-report.json"
 

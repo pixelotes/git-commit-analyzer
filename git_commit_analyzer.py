@@ -564,7 +564,7 @@ Examples:
                 slack_payload = {
                     "text": f"Git Commit Analysis Report for {analyzer.get_repo_name_from_git()}:\n"
                             f"---\n"
-                            f"Analysis date: {report['analysis_summary']['analysis_date']}"
+                            f"Analysis date: {report['analysis_summary']['analysis_date']}\n"
                             f"Total Commits: {report['analysis_summary']['total_commits']}\n"
                             f"Pass: {report['analysis_summary']['pass_count']}, "
                             f"Fail: {report['analysis_summary']['fail_count']}, "

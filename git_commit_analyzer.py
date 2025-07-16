@@ -597,7 +597,7 @@ Examples:
                             f"Flagged Commits:\n{flagged_text}\n\n"
                             f"Total analysis time: {report['analysis_summary']['total_analysis_time_seconds']}\n"
                             f"Average time per commit: {report['analysis_summary']['average_analysis_time_seconds']}\n"
-                            f"Model used: {model_name}\n\n"
+                            f"Model used: {report['analysis_summary']['model_used']}\n\n"
                             f"Report saved to: {args.output}"
                 }
                 response = requests.post(args.slack_webhook, json=slack_payload)

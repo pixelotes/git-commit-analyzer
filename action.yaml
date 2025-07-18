@@ -15,6 +15,9 @@ inputs:
   end_date:
     description: 'End date for commit analysis (YYYY-MM-DD)'
     required: false
+  slack_webhook:
+    description: 'Slack webhook for notifying the analysis results'
+    required: false
 
 runs:
   using: 'docker'
@@ -23,3 +26,4 @@ runs:
     - ${{ inputs.model }}
     - ${{ inputs.start_date }}
     - ${{ inputs.end_date }}
+    - ${{ inputs.slack_webhook }}

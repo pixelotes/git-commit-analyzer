@@ -185,7 +185,6 @@ python git_commit_analyzer.py \
   --end-date "2024-01-31" \
   --api-url "http://localhost:11434/api/generate" \
   --timeout 180
-```
 
 # With Slack output
 python git_commit_analyzer.py \

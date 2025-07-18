@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 set -e
 
 # Function to install jq based on available package manager
@@ -53,6 +53,11 @@ fi
 echo "Current directory: $(pwd)"
 echo "GITHUB_ACTION_PATH: $GITHUB_ACTION_PATH"
 echo "GITHUB_WORKSPACE: $GITHUB_WORKSPACE"
+if ! [ -n $INPUT_SLACK_WEBHOOK ]; then
+  echo "SLACK_WEBHOOK: true"
+else
+  echo "SLACK_WEBHOOK: false"
+fi
 echo "Repository contents:"
 ls -la
 echo "Last 10 commits:"
@@ -84,30 +89,31 @@ if [ -n "$GITHUB_EVENT_PATH" ] && grep -q '"pull_request"' "$GITHUB_EVENT_PATH";
 
     if ! [ -n "$END_DATE" ]; then
         # Use today as end date
-        END_DATE=$(date -u +%Y-%m-%d)
+        END_DATE=$(date -u +"%Y-%m-%dT%H:%M:%S")
     fi
   fi
 fi
 
-# Start date: 00:00:00 (beginning of day)
-START_DATETIME="${START_DATE}"
-# End date: 23:59:59 (end of day)
-END_DATETIME="${END_DATE}T23:59:59"
-
-# Debug print (optional)
-echo "Using start date: $START_DATETIME"
-echo "Using end date: $END_DATETIME"
+# Debug print
+echo "Using start date: $START_DATE"
+echo "Using end date: $END_DATE"
 echo "Repository path: $GITHUB_WORKSPACE"
 echo "Using model: $INPUT_MODEL"
 echo "Output file: $GITHUB_WORKSPACE/security-report.json"
 
 # Run analysis with dates resolved
-python "/app/git_commit_analyzer.py" \
-  --repo $GITHUB_WORKSPACE/ \
-  --start-date "$START_DATETIME" \
-  --end-date "$END_DATETIME" \
+CMD=(python "/app/git_commit_analyzer.py" \
+  --repo "$GITHUB_WORKSPACE/" \
+  --start-date "$START_DATE" \
+  --end-date "$END_DATE" \
   --model "$INPUT_MODEL" \
-  --output "$GITHUB_WORKSPACE/security-report.json"
+  --output "$GITHUB_WORKSPACE/security-report.json")
+
+if [[ -n "$INPUT_SLACK_WEBHOOK" ]]; then
+  CMD+=(--slack-webhook "$INPUT_SLACK_WEBHOOK")
+fi
+
+"${CMD[@]}"
 
 # Post results as check
 echo "Analysis completed. Review security-report.json for details."

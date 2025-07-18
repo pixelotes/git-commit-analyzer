@@ -62,6 +62,25 @@ Anwer only with these two lines:
 VERDICT: PASS or FAIL
 REASONING: Brief explanation of your analysis, one or two sentences max."""
 
+    
+    def get_repo_name_from_git(self) -> str:
+        """Get the actual repository name from the git config."""
+        try:
+            original_cwd = os.getcwd()
+            os.chdir(self.repo_path)
+            result = subprocess.run(
+                ["git", "config", "--get", "remote.origin.url"],
+                capture_output=True, text=True, check=True
+            )
+            os.chdir(original_cwd)
+            url = result.stdout.strip()
+            if url.endswith(".git"):
+                url = url[:-4]
+            return os.path.basename(url)
+        except Exception:
+            return os.path.basename(os.path.abspath(self.repo_path))
+
+    
     def _load_custom_prompt(self) -> Optional[str]:
         """Load custom prompt from external file."""
         try:
@@ -533,22 +552,52 @@ Examples:
                     report = json.load(f)
                 
                 # Build flagged commits list
+                repo_name = analyzer.get_repo_name_from_git()
+                
+                # Try to get remote URL to build commit links
+                try:
+                    original_cwd = os.getcwd()
+                    os.chdir(args.repo)
+                    remote_url = subprocess.run(
+                        ["git", "config", "--get", "remote.origin.url"],
+                        capture_output=True, text=True, check=True
+                    ).stdout.strip()
+                    os.chdir(original_cwd)
+                
+                    # Normalize GitHub URL (remove .git, convert SSH to HTTPS)
+                    if remote_url.endswith(".git"):
+                        remote_url = remote_url[:-4]
+                    if remote_url.startswith("git@github.com:"):
+                        remote_url = "https://github.com/" + remote_url[len("git@github.com:"):]
+                except Exception:
+                    remote_url = None
+                
                 flagged_commits = []
                 for commit in report['commits']:
                     if commit['verdict'] in ['FAIL', 'ERROR']:
-                        flagged_commits.append(
-                            f"• {commit['hash'][:8]} - {commit['verdict']}: {commit['message'][:60]}{'...' if len(commit['message']) > 60 else ''}"
-                        )
+                        commit_hash = commit['hash'][:8]
+                        message_snippet = commit['message'][:60] + ('...' if len(commit['message']) > 60 else '')
+                        if remote_url:
+                            commit_url = f"{remote_url}/commit/{commit['hash']}"
+                            line = f"• <{commit_url}|{commit_hash}> - {commit['verdict']}: {message_snippet}"
+                        else:
+                            line = f"• {commit_hash} - {commit['verdict']}: {message_snippet}"
+                        flagged_commits.append(line)
                 
                 flagged_text = "\n".join(flagged_commits) if flagged_commits else "None"
                 
                 slack_payload = {
-                    "text": f"Git Commit Analysis Report for {os.path.basename(os.path.abspath(args.repo))}:\n"
+                    "text": f"Git Commit Analysis Report for {analyzer.get_repo_name_from_git()}:\n"
+                            f"---\n"
+                            f"Analysis date: {report['analysis_summary']['analysis_date']}\n"
                             f"Total Commits: {report['analysis_summary']['total_commits']}\n"
                             f"Pass: {report['analysis_summary']['pass_count']}, "
                             f"Fail: {report['analysis_summary']['fail_count']}, "
                             f"Errors: {report['analysis_summary']['error_count']}\n\n"
                             f"Flagged Commits:\n{flagged_text}\n\n"
+                            f"Total analysis time: {report['analysis_summary']['total_analysis_time_seconds']}\n"
+                            f"Average time per commit: {report['analysis_summary']['average_analysis_time_seconds']}\n"
+                            f"Model used: {report['analysis_summary']['model_used']}\n\n"
                             f"Report saved to: {args.output}"
                 }
                 response = requests.post(args.slack_webhook, json=slack_payload)

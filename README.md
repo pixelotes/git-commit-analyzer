@@ -4,6 +4,41 @@ A Python tool that analyzes git commits for suspicious or malicious code changes
 
 **⚠️ Important**: This tool is designed to assist in identifying commits that may require manual security review. It is **not a substitute for professional security audits** or comprehensive code review processes.
 
+---
+
+## 📚 Table of Contents
+
+- [🚀 Features](#-features)
+- [📋 Prerequisites](#-prerequisites)
+  - [1. Install Ollama](#1-install-ollama)
+  - [2. Start Ollama Service](#2-start-ollama-service)
+- [🐳 Docker Usage (Recommended)](#-docker-usage-recommended)
+  - [Build the Docker Image](#build-the-docker-image)
+  - [Run Analysis with Docker](#run-analysis-with-docker)
+    - [Basic Usage (Interactive Model Selection)](#basic-usage-interactive-model-selection)
+    - [With Specific Model](#with-specific-model)
+    - [Custom Output Location](#custom-output-location)
+  - [Docker Network Alternatives](#docker-network-alternatives)
+- [🖥️ Local Python Usage](#️-local-python-usage)
+  - [Requirements](#requirements)
+  - [Installation](#installation)
+  - [Usage](#usage)
+- [📊 Command Line Options](#-command-line-options)
+- [📈 Understanding the Output](#-understanding-the-output)
+  - [Sample Output](#sample-output)
+  - [JSON Report Structure](#json-report-structure)
+- [🔧 How It Works](#-how-it-works)
+- [🛠️ Troubleshooting](#️-troubleshooting)
+  - [Common Issues](#common-issues)
+  - [Performance Tips](#performance-tips)
+- [📝 To-Do](#-to-do)
+- [🤝 Contributing](#-contributing)
+- [📄 License](#-license)
+- [🙏 Acknowledgments](#-acknowledgments)
+- [⚠️ Disclaimer](#️-disclaimer)
+
+---
+
 ## 🚀 Features
 
 - **AI-Powered Analysis**: Uses local Ollama models to analyze code changes
